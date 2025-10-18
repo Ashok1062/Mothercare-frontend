@@ -10,7 +10,7 @@ function PatientForm({ isVisible, editData, onClose, onSaveSuccess }) {
 
   const [formData, setFormData] = useState({
     userId: "",
-    name: "",
+    patientName: "",
     age: "",
     gender: "",
     contact: { email: "", phone: "" },
@@ -117,9 +117,9 @@ function PatientForm({ isVisible, editData, onClose, onSaveSuccess }) {
           <div className="flex gap-3">
             <input
               type="text"
-              name="name"
+              name="patientName"
               placeholder="Patient Name"
-              value={formData.name}
+              value={formData.patientName}
               onChange={handleChange}
               className="w-full p-2 border rounded"
               required

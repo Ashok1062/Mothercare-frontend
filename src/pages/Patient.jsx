@@ -38,9 +38,15 @@ function Patient() {
       });
       setEditData(res.data);
     } catch (err) {
-      if (err.response?.status === 404) setEditData(null);
-      else console.error("Fetch error:", err.message);
-    } finally {
+    if (err.response?.status === 404) {
+      // 🟢 No patient found — show form to create one
+      setEditData(null);
+      setShowForm(true);
+      console.log("No patient data yet, showing form...");
+    } else {
+      console.error("Fetch patient error:", err);
+    }
+  } finally {
       setLoading(false);
     }
   };
