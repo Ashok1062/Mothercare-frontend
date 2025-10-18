@@ -97,67 +97,58 @@ function Admin() {
   };
 
   // ✅ Move Appointment
-  // ✅ Handle Move Appointment click
-const handleMoveAppointment = async (appointment) => {
-  if (!appointment || !appointment._id) return alert("Invalid appointment");
+  const handleMoveAppointment = async (appointment) => {
+    if (!appointment || !appointment._id) return alert("Invalid appointment");
 
-  setSelectedAppointment(appointment);
-  setShowMoveModal(true);
+    setSelectedAppointment(appointment);
+    setShowMoveModal(true);
 
-  try {
-    const token = localStorage.getItem("token");
+    try {
+      const token = localStorage.getItem("token");
+      const department = appointment.department || "General";
+      const res = await axios.get(
+        `${baseURL}/api/doctors/department/${department}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    // Use appointment.department, fallback to 'General'
-    const department = appointment.department || "General";
+      const doctorsInDept = res.data || [];
+      if (doctorsInDept.length === 0) {
+        alert(`No doctors found in department: ${department}`);
+        setDepartmentDoctors([]);
+        return;
+      }
 
-    // Fetch all doctors in that department
-    const res = await axios.get(
-      `${baseURL}/api/doctors/department/${department}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    const doctorsInDept = res.data || [];
-
-    if (doctorsInDept.length === 0) {
-      alert(`No doctors found in department: ${department}`);
-      setDepartmentDoctors([]);
-      return;
+      setDepartmentDoctors(doctorsInDept);
+    } catch (err) {
+      console.error("Error fetching doctors:", err.response?.data || err.message);
+      alert("Failed to fetch doctors for this department");
     }
+  };
 
-    setDepartmentDoctors(doctorsInDept);
-  } catch (err) {
-    console.error("Error fetching doctors:", err.response?.data || err.message);
-    alert("Failed to fetch doctors for this department");
-  }
-};
+  // ✅ Confirm Move Appointment
+  const confirmMoveAppointment = async () => {
+    if (!selectedAppointment?._id) return alert("Appointment not selected");
+    if (!selectedDoctorId) return alert("Please select a doctor");
 
-// ✅ Confirm Move to selected doctor
-const confirmMoveAppointment = async () => {
-  if (!selectedAppointment?._id) return alert("Appointment not selected");
-  if (!selectedDoctorId) return alert("Please select a doctor");
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.put(
+        `${baseURL}/api/appointments/move/${selectedAppointment._id}`,
+        { targetDoctorId: selectedDoctorId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log("Move response:", res.data);
 
-  try {
-    const token = localStorage.getItem("token");
-
-    const res = await axios.put(
-      `${baseURL}/api/appointments/move/${selectedAppointment._id}`,
-      { targetDoctorId: selectedDoctorId },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    console.log("Move response:", res.data);
-
-    alert("Appointment moved successfully!");
-    setShowMoveModal(false);
-    setSelectedDoctorId("");
-    setSelectedAppointment(null);
-
-    // Refresh appointments
-    fetchAppointments();
-  } catch (err) {
-    console.error("Move appointment error:", err.response?.data || err.message);
-    alert(err.response?.data?.message || "Failed to move appointment");
-  }
-};
+      alert("Appointment moved successfully!");
+      setShowMoveModal(false);
+      setSelectedDoctorId("");
+      setSelectedAppointment(null);
+      fetchAppointments();
+    } catch (err) {
+      console.error("Move appointment error:", err.response?.data || err.message);
+      alert(err.response?.data?.message || "Failed to move appointment");
+    }
+  };
 
   // ✅ Reject Appointment
   const handleRejectAppointment = async (appointment) => {
@@ -165,26 +156,24 @@ const confirmMoveAppointment = async () => {
     if (!window.confirm("Are you sure you want to delete this appointment?")) return;
 
     try {
-  const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `${baseURL}/api/appointments/${appointment._id}`,
+        { status: "Rejected" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-  // 🔹 Instead of deleting, update the status to "Rejected"
-  const res = await axios.put(
-    `${baseURL}/api/appointments/${appointment._id}`,
-    { status: "Rejected" },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+      setAppointments((prev) =>
+        prev.map((a) =>
+          a._id === appointment._id ? { ...a, status: "Rejected" } : a
+        )
+      );
 
-  // 🔹 Update in UI
-  setAppointments((prev) =>
-    prev.map((a) => (a._id === appointment._id ? { ...a, status: "Rejected" } : a))
-  );
-
-  alert("Appointment marked as Rejected");
-} catch (err) {
-  console.error("Reject appointment error:", err);
-  alert("Failed to reject appointment");
-}
-
+      alert("Appointment marked as Rejected");
+    } catch (err) {
+      console.error("Reject appointment error:", err);
+      alert("Failed to reject appointment");
+    }
   };
 
   // ✅ Search Filters
@@ -212,190 +201,194 @@ const confirmMoveAppointment = async () => {
     );
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-3xl font-bold text-center text-blue-600 mb-8">
+    <div className="min-h-screen bg-gray-100 p-4 md:p-6">
+      <h1 className="text-3xl font-bold text-center text-blue-600 mb-6 md:mb-8">
         Admin Dashboard
       </h1>
 
       {/* 🧑‍⚕️ Doctors & Patients */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
         {/* Doctors */}
         <div className="bg-white shadow-md rounded-lg p-4">
-          <div className="flex justify-between mb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
             <h2 className="text-xl font-semibold text-gray-700">Doctors</h2>
             <input
               type="text"
               placeholder="Search doctor..."
               value={doctorSearch}
               onChange={(e) => setDoctorSearch(e.target.value)}
-              className="border px-3 py-1 rounded text-sm"
+              className="border px-3 py-1 rounded text-sm w-full sm:w-auto"
             />
           </div>
-          {filteredDoctors.length > 0 ? (
-            <table className="w-full border text-sm">
-              <thead className="bg-blue-200">
-                <tr>
-                  <th className="p-2 border">Name</th>
-                  <th className="p-2 border">Department</th>
-                  <th className="p-2 border">Experience</th>
-                  <th className="p-2 border">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredDoctors.map((doc) => (
-                  <tr key={doc._id} className="text-center hover:bg-gray-50">
-                    <td className="border p-2">{doc.name}</td>
-                    <td className="border p-2">{doc.department}</td>
-                    <td className="border p-2">{doc.experience} yrs</td>
-                    <td className="p-2 flex justify-center gap-2">
-                      <button
-                        onClick={() => handleDeleteDoctor(doc._id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        onClick={() =>
-                          setSelectedInfo({ ...doc, role: "doctor" })
-                        }
-                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-                      >
-                        View
-                      </button>
-                    </td>
+          <div className="overflow-x-auto">
+            {filteredDoctors.length > 0 ? (
+              <table className="w-full border text-sm min-w-[500px]">
+                <thead className="bg-blue-200">
+                  <tr>
+                    <th className="p-2 border">Name</th>
+                    <th className="p-2 border">Department</th>
+                    <th className="p-2 border">Experience</th>
+                    <th className="p-2 border">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>No doctors found.</p>
-          )}
+                </thead>
+                <tbody>
+                  {filteredDoctors.map((doc) => (
+                    <tr key={doc._id} className="text-center hover:bg-gray-50">
+                      <td className="border p-2">{doc.name}</td>
+                      <td className="border p-2">{doc.department}</td>
+                      <td className="border p-2">{doc.experience} yrs</td>
+                      <td className="p-2 flex justify-center gap-2">
+                        <button
+                          onClick={() => handleDeleteDoctor(doc._id)}
+                          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() => setSelectedInfo({ ...doc, role: "doctor" })}
+                          className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>No doctors found.</p>
+            )}
+          </div>
         </div>
 
         {/* Patients */}
         <div className="bg-white shadow-md rounded-lg p-4">
-          <div className="flex justify-between mb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
             <h2 className="text-xl font-semibold text-gray-700">Patients</h2>
             <input
               type="text"
               placeholder="Search patient..."
               value={patientSearch}
               onChange={(e) => setPatientSearch(e.target.value)}
-              className="border px-3 py-1 rounded text-sm"
+              className="border px-3 py-1 rounded text-sm w-full sm:w-auto"
             />
           </div>
-          {filteredPatients.length > 0 ? (
-            <table className="w-full border text-sm">
-              <thead className="bg-green-200">
-                <tr>
-                  <th className="p-2 border">Name</th>
-                  <th className="p-2 border">Age</th>
-                  <th className="p-2 border">Gender</th>
-                  <th className="p-2 border">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPatients.map((pat) => (
-                  <tr key={pat._id} className="text-center hover:bg-gray-50">
-                    <td className="border p-2">{pat.name}</td>
-                    <td className="border p-2">{pat.age}</td>
-                    <td className="border p-2">{pat.gender}</td>
-                    <td className="p-2 flex justify-center gap-2">
-                      <button
-                        onClick={() => handleDeletePatient(pat._id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        onClick={() =>
-                          setSelectedInfo({ ...pat, role: "patient" })
-                        }
-                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-                      >
-                        View
-                      </button>
-                    </td>
+          <div className="overflow-x-auto">
+            {filteredPatients.length > 0 ? (
+              <table className="w-full border text-sm min-w-[500px]">
+                <thead className="bg-green-200">
+                  <tr>
+                    <th className="p-2 border">Name</th>
+                    <th className="p-2 border">Age</th>
+                    <th className="p-2 border">Gender</th>
+                    <th className="p-2 border">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>No patients found.</p>
-          )}
+                </thead>
+                <tbody>
+                  {filteredPatients.map((pat) => (
+                    <tr key={pat._id} className="text-center hover:bg-gray-50">
+                      <td className="border p-2">{pat.name}</td>
+                      <td className="border p-2">{pat.age}</td>
+                      <td className="border p-2">{pat.gender}</td>
+                      <td className="p-2 flex justify-center gap-2">
+                        <button
+                          onClick={() => handleDeletePatient(pat._id)}
+                          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() => setSelectedInfo({ ...pat, role: "patient" })}
+                          className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>No patients found.</p>
+            )}
+          </div>
         </div>
       </div>
 
       {/* 🩺 Appointments */}
-      <div className="bg-white mt-10 shadow-md rounded-lg p-4">
-        <div className="flex justify-between mb-4">
+      <div className="bg-white mt-8 shadow-md rounded-lg p-4">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
           <h2 className="text-xl font-semibold text-gray-700">Appointments</h2>
           <input
             type="text"
             placeholder="Search appointment..."
             value={appointmentSearch}
             onChange={(e) => setAppointmentSearch(e.target.value)}
-            className="border px-3 py-1 rounded text-sm"
+            className="border px-3 py-1 rounded text-sm w-full sm:w-auto"
           />
         </div>
-        <table className="w-full border text-sm">
-          <thead className="bg-pink-200">
-            <tr>
-              <th className="p-2 border">Patient</th>
-              <th className="p-2 border">Department</th>
-              <th className="p-2 border">Doctor</th>
-              <th className="p-2 border">Date</th>
-              <th className="p-2 border">Notes</th>
-              <th className="p-2 border">Status</th>
-              <th className="p-2 border">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredAppointments.length > 0 ? (
-              filteredAppointments.map((a) => (
-                <tr key={a._id} className="text-center hover:bg-gray-50">
-                  <td className="border p-2">{a.patient?.name || "N/A"}</td>
-                  <td className="border p-2">{a.department || "—"}</td>
-                  <td className="border p-2">{a.doctor?.name || "Unassigned"}</td>
-                  <td className="border p-2">{a.appointmentDate || "—"}</td>
-                  <td className="border p-2">{a.notes || "—"}</td>
-                  <td className="border p-2">{a.status || "Pending"}</td>
-                  <td className="p-2 flex justify-center gap-2">
-                    <button
-                      onClick={() => setSelectedAppointment(a)}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-                    >
-                      View
-                    </button>
-                    <button
-                      onClick={() => handleMoveAppointment(a)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                    >
-                      Move
-                    </button>
-                    <button
-                      onClick={() => handleRejectAppointment(a)}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                    >
-                      Delete
-                    </button>
+        <div className="overflow-x-auto">
+          <table className="w-full border text-sm min-w-[700px]">
+            <thead className="bg-pink-200">
+              <tr>
+                <th className="p-2 border">Patient</th>
+                <th className="p-2 border">Department</th>
+                <th className="p-2 border">Doctor</th>
+                <th className="p-2 border">Date</th>
+                <th className="p-2 border">Notes</th>
+                <th className="p-2 border">Status</th>
+                <th className="p-2 border">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredAppointments.length > 0 ? (
+                filteredAppointments.map((a) => (
+                  <tr key={a._id} className="text-center hover:bg-gray-50">
+                    <td className="border p-2">{a.patient?.name || "N/A"}</td>
+                    <td className="border p-2">{a.department || "—"}</td>
+                    <td className="border p-2">{a.doctor?.name || "Unassigned"}</td>
+                    <td className="border p-2">{a.appointmentDate || "—"}</td>
+                    <td className="border p-2">{a.notes || "—"}</td>
+                    <td className="border p-2">{a.status || "Pending"}</td>
+                    <td className="p-2 flex justify-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => setSelectedAppointment(a)}
+                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => handleMoveAppointment(a)}
+                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                      >
+                        Move
+                      </button>
+                      <button
+                        onClick={() => handleRejectAppointment(a)}
+                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan="7"
+                    className="text-center p-4 text-gray-500 italic"
+                  >
+                    No appointments found.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="7" className="text-center p-4 text-gray-500 italic">
-                  No appointments found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Info & Appointment Modals */}
       <InfoButton infoData={selectedInfo} onClose={() => setSelectedInfo(null)} />
-
       {selectedAppointment && !showMoveModal && (
         <AdminAppointmentPopup
           appointmentData={selectedAppointment}
@@ -405,7 +398,7 @@ const confirmMoveAppointment = async () => {
 
       {/* 🧠 Move Modal */}
       {showMoveModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 px-2">
           <div className="bg-white rounded-lg p-6 w-full max-w-lg shadow-lg">
             <h2 className="text-2xl font-bold text-center mb-4 text-blue-700">
               Move Appointment — {selectedAppointment?.department}
@@ -440,7 +433,7 @@ const confirmMoveAppointment = async () => {
               ))}
             </div>
 
-            <div className="flex justify-end mt-6 gap-3">
+            <div className="flex justify-end mt-6 gap-3 flex-wrap">
               <button
                 onClick={() => setShowMoveModal(false)}
                 className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
