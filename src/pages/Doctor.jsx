@@ -159,9 +159,28 @@ function Doctor() {
               <p><span className="font-medium">Experience:</span> {editData.experience} years</p>
               <p><span className="font-medium">Phone:</span> {editData.contact?.phone || "N/A"}</p>
               <p><span className="font-medium">Email:</span> {editData.contact?.email || "N/A"}</p>
+              <div className="text-end mt-4">
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-md transition-all duration-300"
+                >
+                  {editData ? "Update Details" : "Add Details"}
+                </button>
+              </div>
             </div>
           ) : (
+            <div>
+
             <p className="text-center text-gray-500 italic">No doctor details found.</p>
+            <div className="text-end mt-4">
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-md transition-all duration-300"
+                >
+                  {editData ? "Update Details" : "Add Details"}
+                </button>
+              </div>
+                  </div>
           )}
         </div>
       </div>
@@ -174,7 +193,7 @@ function Doctor() {
         
         {allDoctors.map((doc) => (
           <div key={doc._id} className="bg-pink-200 shadow-lg rounded-2xl p-6 w-full max-w-md border border-gray-200 cursor-pointer hover:shadow-2xl transition-shadow"
-            onClick={() => { setEditData(doc); setShowForm(true); }}
+            
           >
             <h3 className="text-2xl font-semibold text-gray-700 text-center mb-6 border rounded-lg p-3 bg-pink-500 shadow-xl">{doc.name}</h3>
             <p><span className="font-medium">Department:</span> {doc.department}</p>

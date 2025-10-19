@@ -137,7 +137,17 @@ function Patient() {
               </div>
             </div>
           ) : (
+            <div className="text-center">
             <p className="text-center text-gray-500">No patient details found.</p>
+            <div className="text-end mt-4">
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-md transition-all duration-300"
+                >
+                  {editData ? "Update Details" : "Add Details"}
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
