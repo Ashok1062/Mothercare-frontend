@@ -229,7 +229,7 @@ function Doctor() {
               <tbody>
                 {appointments.map((a) => (
                   <tr key={a._id} className="text-center hover:bg-gray-50">
-                    <td className="border p-2">{a.patient?.name}</td>
+                    <td className="border p-2">{a.patient?._id}</td>
                     <td className="border p-2">{a.notes}</td>
                     <td className="border p-2">{a.appointmentDate || "-"}</td>
                     <td className="border p-2">{a.appointmentTime || "-"}</td>
@@ -264,7 +264,7 @@ function Doctor() {
               Patient Details
             </h3>
             <div className="space-y-3 text-gray-700 text-sm sm:text-base">
-              <p><span className="font-semibold text-gray-800">Name:</span> {selectedPatient?.name || "N/A"}</p>
+              <p><span className="font-semibold text-gray-800">Name:</span> {selectedPatient?.patientName || "N/A"}</p>
               <p><span className="font-semibold text-gray-800">Age:</span> {selectedPatient?.age || "N/A"}</p>
               <p><span className="font-semibold text-gray-800">Contact:</span> {selectedPatient?.contact?.phone || "N/A"}</p>
               <p><span className="font-semibold text-gray-800">Medical History:</span> {selectedPatient?.medicalHistory || "N/A"}</p>

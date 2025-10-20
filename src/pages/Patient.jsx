@@ -10,6 +10,7 @@ function Patient() {
   const [userId, setUserId] = useState("");
   const [appointmentDepartment, setAppointmentDepartment] = useState("");
   const [appointmentNotes, setAppointmentNotes] = useState("");
+
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,16 +38,16 @@ function Patient() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setEditData(res.data);
+       // ✅ initialize for appointment
     } catch (err) {
-    if (err.response?.status === 404) {
-      // 🟢 No patient found — show form to create one
-      setEditData(null);
-      setShowForm(true);
-      console.log("No patient data yet, showing form...");
-    } else {
-      console.error("Fetch patient error:", err);
-    }
-  } finally {
+      if (err.response?.status === 404) {
+        setEditData(null);
+        setShowForm(true);
+        console.log("No patient data yet, showing form...");
+      } else {
+        console.error("Fetch patient error:", err);
+      }
+    } finally {
       setLoading(false);
     }
   };
@@ -90,13 +91,14 @@ function Patient() {
         `${baseURL}/api/appointments`,
         {
           patientId: editData._id,
-          patientName: editData.name,
           department: appointmentDepartment,
           notes: appointmentNotes,
           status: "Pending",
+        
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      console.log(editData.patientName);
 
       alert("Appointment submitted successfully!");
       setAppointmentNotes("");
@@ -114,7 +116,7 @@ function Patient() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 mt-20 p-6 animate-fadeIn">
       <div className="flex flex-col md:flex-row items-start justify-center gap-10 transition-all duration-500 ease-in-out">
         
-        {/* 🧍 Patient Details Card */}
+        {/* Patient Details Card */}
         <div className="bg-white shadow-lg rounded-2xl p-6 w-full max-w-md border border-gray-200 transform transition-all hover:scale-[1.01]">
           <h1 className="text-3xl font-semibold text-pink-600 text-center mb-6 border-b pb-3">
             Patient Dashboard
@@ -122,7 +124,7 @@ function Patient() {
 
           {editData ? (
             <div className="space-y-3 text-gray-700">
-              <p><span className="font-medium">Name:</span> {editData.name}</p>
+              <p><span className="font-medium">Name:</span> {editData.patientName}</p>
               <p><span className="font-medium">Age:</span> {editData.age}</p>
               <p><span className="font-medium">Gender:</span> {editData.gender}</p>
               <p><span className="font-medium">Contact:</span> {editData.contact?.phone || "N/A"}</p>
@@ -132,26 +134,26 @@ function Patient() {
                   onClick={() => setShowForm(true)}
                   className="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-md transition-all duration-300"
                 >
-                  {editData ? "Update Details" : "Add Details"}
+                  Update Details
                 </button>
               </div>
             </div>
           ) : (
             <div className="text-center">
-            <p className="text-center text-gray-500">No patient details found.</p>
-            <div className="text-end mt-4">
+              <p className="text-gray-500">No patient details found.</p>
+              <div className="text-end mt-4">
                 <button
                   onClick={() => setShowForm(true)}
                   className="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-md transition-all duration-300"
                 >
-                  {editData ? "Update Details" : "Add Details"}
+                  Add Details
                 </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* 📅 Appointment Form */}
+        {/* Appointment Form */}
         <div className="bg-white shadow-lg rounded-2xl p-6 w-full max-w-3xl border border-gray-200 space-y-6 transform transition-all hover:scale-[1.01]">
           <h2 className="text-2xl font-semibold text-blue-700 text-center mb-4">Book Appointment</h2>
 
@@ -159,7 +161,7 @@ function Patient() {
             <form onSubmit={handleAppointmentSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block font-medium mb-1">Department</label>
-                <select 
+                <select
                   value={appointmentDepartment}
                   onChange={(e) => setAppointmentDepartment(e.target.value)}
                   className="w-full px-3 py-2 border rounded-md"
@@ -196,7 +198,7 @@ function Patient() {
         </div>
       </div>
 
-      {/* 🧾 Appointment Table */}
+      {/* Appointment Table */}
       <div className="p-6 bg-white shadow-xl rounded-2xl mt-7 max-w-6xl mx-auto border border-gray-200 overflow-x-auto">
         <h2 className="text-xl text-center font-semibold text-green-700 mb-4">
           --- My Appointments ---
@@ -220,33 +222,14 @@ function Patient() {
                   <td className="border px-3 py-2">{a.doctor?.name || "Not Assigned"}</td>
                   <td className="border px-3 py-2">{a.appointmentDate || "-"}</td>
                   <td className="border px-3 py-2">{a.appointmentTime || "-"}</td>
-                  <td
-                    className={`border px-3 py-2 font-medium ${
-                      a.status === "Confirmed"
-                        ? "text-green-600"
-                        : a.status === "Rejected"
-                        ? "text-red-500"
-                        : "text-yellow-500"
-                    }`}
-                  >
-                    {a.status}
-                  </td>
+                  <td className={`border px-3 py-2 font-medium ${
+                    a.status === "Confirmed" ? "text-green-600" :
+                    a.status === "Rejected" ? "text-red-500" : "text-yellow-500"
+                  }`}>{a.status}</td>
                   <td className="border px-3 py-2">
-                    {a.status === "Confirmed" && (
-                      <span className="text-green-600 font-semibold">
-                        ✅ Appointment Confirmed
-                      </span>
-                    )}
-                    {a.status === "Rejected" && (
-                      <span className="text-red-500 font-semibold">
-                        ❌ Appointment Rejected
-                      </span>
-                    )}
-                    {a.status === "Pending" && (
-                      <span className="text-yellow-600 font-semibold">
-                        ⏳ Awaiting Doctor Confirmation
-                      </span>
-                    )}
+                    {a.status === "Confirmed" && <span className="text-green-600 font-semibold">✅ Appointment Confirmed</span>}
+                    {a.status === "Rejected" && <span className="text-red-500 font-semibold">❌ Appointment Rejected</span>}
+                    {a.status === "Pending" && <span className="text-yellow-600 font-semibold">⏳ Awaiting Doctor Confirmation</span>}
                   </td>
                 </tr>
               ))}
@@ -257,31 +240,27 @@ function Patient() {
         )}
       </div>
 
-      {/* 🧾 Mobile Modal for PatientForm */}
+      {/* PatientForm Modal */}
       {showForm && (
-  <div className="fixed inset-0  bg-opacity-40 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fadeIn">
-    <div className="bg-white w-full max-w-md max-h-[90vh] p-6 rounded-xl shadow-2xl relative flex flex-col">
-      {/* Close Button */}
-      <button
-        onClick={() => setShowForm(false)}
-        className="absolute top-2 right-3 text-gray-500 hover:text-gray-700 text-xl z-10"
-      >
-        ✖
-      </button>
-
-      {/* Scrollable Content */}
-      <div className="overflow-y-auto pt-8">
-        <PatientForm
-          isVisible={showForm}
-          onClose={() => setShowForm(false)}
-          editData={editData}
-          onSaveSuccess={handleSaveSuccess}
-        />
-      </div>
-    </div>
-  </div>
-)}
-
+        <div className="fixed inset-0 bg-opacity-40 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white w-full max-w-md max-h-[90vh] p-6 rounded-xl shadow-2xl relative flex flex-col">
+            <button
+              onClick={() => setShowForm(false)}
+              className="absolute top-2 right-3 text-gray-500 hover:text-gray-700 text-xl z-10"
+            >
+              ✖
+            </button>
+            <div className="overflow-y-auto pt-8">
+              <PatientForm
+                isVisible={showForm}
+                onClose={() => setShowForm(false)}
+                editData={editData}
+                onSaveSuccess={handleSaveSuccess}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

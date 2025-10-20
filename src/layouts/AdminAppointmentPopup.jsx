@@ -3,8 +3,18 @@ import React from "react";
 function AdminAppointmentPopup({ appointmentData, onClose }) {
   if (!appointmentData) return null;
 
+  // Safely extract doctor & patient names
+  const doctorName =
+    appointmentData.doctor?.name ||
+    appointmentData.doctor?.fullName || // optional fallback
+    "N/A";
+
+  const patientName =
+    appointmentData.patient?.patientName ||
+    appointmentData.patient?.name ||
+    "N/A";
+
   return (
-    <div>
     <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
       <div className="bg-white w-[90%] md:w-[600px] rounded-lg shadow-lg p-6 relative overflow-y-auto max-h-[80vh]">
         <h2 className="text-2xl font-bold text-center mb-4 text-blue-600">
@@ -15,19 +25,15 @@ function AdminAppointmentPopup({ appointmentData, onClose }) {
           <tbody>
             <tr>
               <td className="border p-2 font-semibold">Appointment ID</td>
-              <td className="border p-2">{appointmentData._id}</td>
+              <td className="border p-2">{appointmentData._id || "N/A"}</td>
             </tr>
             <tr>
               <td className="border p-2 font-semibold">Doctor</td>
-              <td className="border p-2">
-                {appointmentData.doctor?.name || appointmentData.doctor}
-              </td>
+              <td className="border p-2">{doctorName}</td>
             </tr>
             <tr>
               <td className="border p-2 font-semibold">Patient</td>
-              <td className="border p-2">
-                {appointmentData.patient?.name || appointmentData.patient}
-              </td>
+              <td className="border p-2">{patientName}</td>
             </tr>
             <tr>
               <td className="border p-2 font-semibold">Date</td>
@@ -39,27 +45,26 @@ function AdminAppointmentPopup({ appointmentData, onClose }) {
             </tr>
             <tr>
               <td className="border p-2 font-semibold">Department</td>
-              <td className="border p-2">{appointmentData.department}</td>
+              <td className="border p-2">{appointmentData.department || "N/A"}</td>
             </tr>
-             <tr>
+            <tr>
               <td className="border p-2 font-semibold">Notes</td>
-              <td className="border p-2">{appointmentData.notes}</td>
+              <td className="border p-2">{appointmentData.notes || "N/A"}</td>
             </tr>
             <tr>
               <td className="border p-2 font-semibold">Status</td>
               <td
                 className={`border p-2 font-semibold ${
-                  appointmentData.status === "approved"
+                  appointmentData.status?.toLowerCase() === "approved"
                     ? "text-green-600"
-                    : appointmentData.status === "pending"
+                    : appointmentData.status?.toLowerCase() === "pending"
                     ? "text-yellow-600"
                     : "text-red-600"
                 }`}
               >
-                {appointmentData.status}
+                {appointmentData.status || "Pending"}
               </td>
             </tr>
-            
           </tbody>
         </table>
 
@@ -70,7 +75,6 @@ function AdminAppointmentPopup({ appointmentData, onClose }) {
           ✕
         </button>
       </div>
-    </div>
     </div>
   );
 }

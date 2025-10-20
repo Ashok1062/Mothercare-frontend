@@ -22,7 +22,7 @@ function Admin() {
   const [patientSearch, setPatientSearch] = useState("");
   const [appointmentSearch, setAppointmentSearch] = useState("");
 
-  // ✅ Fetch Doctors & Patients
+  // Fetch Doctors & Patients
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -37,6 +37,7 @@ function Admin() {
         ]);
         setDoctors(doctorRes.data || []);
         setPatients(patientRes.data || []);
+      
       } catch (err) {
         console.error("Error fetching admin data:", err);
         alert("Error loading data");
@@ -47,7 +48,7 @@ function Admin() {
     fetchData();
   }, []);
 
-  // ✅ Fetch Appointments
+  // Fetch Appointments
   const fetchAppointments = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -64,7 +65,7 @@ function Admin() {
     fetchAppointments();
   }, []);
 
-  // ✅ Delete Doctor
+  // Delete Doctor
   const handleDeleteDoctor = async (id) => {
     if (!window.confirm("Are you sure you want to delete this doctor?")) return;
     try {
@@ -80,7 +81,7 @@ function Admin() {
     }
   };
 
-  // ✅ Delete Patient
+  // Delete Patient
   const handleDeletePatient = async (id) => {
     if (!window.confirm("Are you sure you want to delete this patient?")) return;
     try {
@@ -96,9 +97,9 @@ function Admin() {
     }
   };
 
-  // ✅ Move Appointment
+  // Move Appointment
   const handleMoveAppointment = async (appointment) => {
-    if (!appointment || !appointment._id) return alert("Invalid appointment");
+    if (!appointment?._id) return alert("Invalid appointment");
 
     setSelectedAppointment(appointment);
     setShowMoveModal(true);
@@ -125,19 +126,18 @@ function Admin() {
     }
   };
 
-  // ✅ Confirm Move Appointment
+  // Confirm Move Appointment
   const confirmMoveAppointment = async () => {
     if (!selectedAppointment?._id) return alert("Appointment not selected");
     if (!selectedDoctorId) return alert("Please select a doctor");
 
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.put(
+      await axios.put(
         `${baseURL}/api/appointments/move/${selectedAppointment._id}`,
         { targetDoctorId: selectedDoctorId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log("Move response:", res.data);
 
       alert("Appointment moved successfully!");
       setShowMoveModal(false);
@@ -150,10 +150,10 @@ function Admin() {
     }
   };
 
-  // ✅ Reject Appointment
+  // Reject Appointment
   const handleRejectAppointment = async (appointment) => {
-    if (!appointment || !appointment._id) return alert("Invalid appointment");
-    if (!window.confirm("Are you sure you want to delete this appointment?")) return;
+    if (!appointment?._id) return alert("Invalid appointment");
+    if (!window.confirm("Are you sure you want to reject this appointment?")) return;
 
     try {
       const token = localStorage.getItem("token");
@@ -176,7 +176,7 @@ function Admin() {
     }
   };
 
-  // ✅ Search Filters
+  // Search Filters
   const filteredDoctors = doctors.filter(
     (doc) =>
       doc.name?.toLowerCase().includes(doctorSearch.toLowerCase()) ||
@@ -184,21 +184,18 @@ function Admin() {
   );
   const filteredPatients = patients.filter(
     (pat) =>
-      pat.name?.toLowerCase().includes(patientSearch.toLowerCase()) ||
+      pat.patientName?.toLowerCase().includes(patientSearch.toLowerCase()) ||
       pat.gender?.toLowerCase().includes(patientSearch.toLowerCase())
   );
   const filteredAppointments = appointments.filter(
     (a) =>
-      a.patientName?.toLowerCase().includes(appointmentSearch.toLowerCase()) ||
+      
       a.department?.toLowerCase().includes(appointmentSearch.toLowerCase()) ||
       a.status?.toLowerCase().includes(appointmentSearch.toLowerCase()) ||
       a.notes?.toLowerCase().includes(appointmentSearch.toLowerCase())
   );
-
-  if (loading)
-    return (
-      <div className="text-center mt-20 text-lg text-gray-600">Loading...</div>
-    );
+ console.log(appointments);
+  if (loading) return <div className="text-center mt-20 text-lg text-gray-600">Loading...</div>;
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 md:p-6">
@@ -206,7 +203,7 @@ function Admin() {
         Admin Dashboard
       </h1>
 
-      {/* 🧑‍⚕️ Doctors & Patients */}
+      {/* Doctors & Patients */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
         {/* Doctors */}
         <div className="bg-white shadow-md rounded-lg p-4">
@@ -234,9 +231,9 @@ function Admin() {
                 <tbody>
                   {filteredDoctors.map((doc) => (
                     <tr key={doc._id} className="text-center hover:bg-gray-50">
-                      <td className="border p-2">{doc.name}</td>
-                      <td className="border p-2">{doc.department}</td>
-                      <td className="border p-2">{doc.experience} yrs</td>
+                      <td className="border p-2">{doc.name || "N/A"}</td>
+                      <td className="border p-2">{doc.department || "—"}</td>
+                      <td className="border p-2">{doc.experience || 0} yrs</td>
                       <td className="p-2 flex justify-center gap-2">
                         <button
                           onClick={() => handleDeleteDoctor(doc._id)}
@@ -287,9 +284,9 @@ function Admin() {
                 <tbody>
                   {filteredPatients.map((pat) => (
                     <tr key={pat._id} className="text-center hover:bg-gray-50">
-                      <td className="border p-2">{pat.name}</td>
-                      <td className="border p-2">{pat.age}</td>
-                      <td className="border p-2">{pat.gender}</td>
+                      <td className="border p-2">{pat.patientName || "N/A"}</td>
+                      <td className="border p-2">{pat.age || "—"}</td>
+                      <td className="border p-2">{pat.gender || "—"}</td>
                       <td className="p-2 flex justify-center gap-2">
                         <button
                           onClick={() => handleDeletePatient(pat._id)}
@@ -315,7 +312,7 @@ function Admin() {
         </div>
       </div>
 
-      {/* 🩺 Appointments */}
+      {/* Appointments */}
       <div className="bg-white mt-8 shadow-md rounded-lg p-4">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
           <h2 className="text-xl font-semibold text-gray-700">Appointments</h2>
@@ -344,7 +341,7 @@ function Admin() {
               {filteredAppointments.length > 0 ? (
                 filteredAppointments.map((a) => (
                   <tr key={a._id} className="text-center hover:bg-gray-50">
-                    <td className="border p-2">{a.patient?.name || "N/A"}</td>
+                    <td className="border p-2">{a.patient?._id || "N/A"}</td>
                     <td className="border p-2">{a.department || "—"}</td>
                     <td className="border p-2">{a.doctor?.name || "Unassigned"}</td>
                     <td className="border p-2">{a.appointmentDate || "—"}</td>
@@ -374,10 +371,7 @@ function Admin() {
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan="7"
-                    className="text-center p-4 text-gray-500 italic"
-                  >
+                  <td colSpan="7" className="text-center p-4 text-gray-500 italic">
                     No appointments found.
                   </td>
                 </tr>
@@ -396,12 +390,12 @@ function Admin() {
         />
       )}
 
-      {/* 🧠 Move Modal */}
+      {/* Move Modal */}
       {showMoveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 px-2">
           <div className="bg-white rounded-lg p-6 w-full max-w-lg shadow-lg">
             <h2 className="text-2xl font-bold text-center mb-4 text-blue-700">
-              Move Appointment — {selectedAppointment?.department}
+              Move Appointment — {selectedAppointment?.department || "Department"}
             </h2>
             <p className="text-gray-600 text-center mb-4">
               Select a doctor to assign this appointment
@@ -419,7 +413,7 @@ function Admin() {
                   <div>
                     <p className="font-semibold text-gray-800">{doc.name}</p>
                     <p className="text-sm text-gray-500">
-                      {doc.department} — {doc.experience} yrs exp
+                      {doc.department || "—"} — {doc.experience || 0} yrs exp
                     </p>
                   </div>
                   <input
